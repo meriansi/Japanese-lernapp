@@ -1,0 +1,921 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Japanisch Lernbegleiter</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root{
+      --bg1:#f7f7fb; --bg2:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
+      --shadow: 0 16px 45px rgba(17,24,39,0.10);
+
+      --k-kana-bg:#eef2ff; --k-kana-ln:#c7d2fe; --k-kana-ink:#1e3a8a;
+      --k-romaji-bg:#ecfeff; --k-romaji-ln:#a5f3fc; --k-romaji-ink:#155e75;
+      --k-mean-bg:#fff7ed; --k-mean-ln:#fed7aa; --k-mean-ink:#7c2d12;
+
+      --good:#16a34a; --bad:#dc2626;
+      --radius: 18px; --radius2: 14px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0; font-family: var(--font); color: var(--ink);
+      background:
+        radial-gradient(1000px 700px at 15% 10%, rgba(255,77,109,0.18), transparent 55%),
+        radial-gradient(900px 650px at 85% 0%, rgba(56,189,248,0.18), transparent 55%),
+        radial-gradient(900px 650px at 50% 110%, rgba(167,139,250,0.14), transparent 55%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      min-height:100vh; overflow-x:hidden;
+    }
+    body::before{
+      content:""; position:fixed; inset:0; pointer-events:none; opacity:0.10;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cg fill='none' stroke='%23111827' stroke-opacity='0.35' stroke-width='1'%3E%3Cpath d='M20 80c30-30 70-30 100 0'/%3E%3Cpath d='M20 80c30 30 70 30 100 0'/%3E%3Cpath d='M140 80c30-30 70-30 100 0'/%3E%3Cpath d='M140 80c30 30 70 30 100 0'/%3E%3Cpath d='M20 170c30-30 70-30 100 0'/%3E%3Cpath d='M20 170c30 30 70 30 100 0'/%3E%3Cpath d='M140 170c30-30 70-30 100 0'/%3E%3Cpath d='M140 170c30 30 70 30 100 0'/%3E%3C/g%3E%3C/svg%3E");
+      background-size: 280px 280px; filter: blur(0.2px);
+    }
+
+    .wrap{ width:min(1100px, 92vw); margin: 28px auto 70px; position:relative; }
+    header{ display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:16px; }
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .logo{
+      width:44px;height:44px;border-radius:16px;
+      background: linear-gradient(135deg, rgba(255,77,109,0.92), rgba(56,189,248,0.92));
+      box-shadow: 0 14px 35px rgba(0,0,0,0.10);
+      position:relative; overflow:hidden;
+    }
+    .logo::after{
+      content:""; position:absolute; inset:-40%;
+      background: radial-gradient(circle at 35% 40%, rgba(255,255,255,0.75), transparent 35%);
+      transform: rotate(18deg);
+    }
+    h1{ margin:0; font-size:18px; font-weight:800; letter-spacing:0.2px; }
+    .sub{ font-size:13px; color: var(--muted); margin-top:2px; }
+
+    .pill{
+      font-size:12px; color: var(--muted);
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.72);
+      padding: 10px 12px; border-radius: 999px;
+      display:flex; gap:10px; align-items:center;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(17,24,39,0.06);
+    }
+
+    .grid{ display:grid; grid-template-columns: 1.12fr 0.88fr; gap: 16px; }
+    @media (max-width: 920px){ .grid{ grid-template-columns: 1fr; } }
+
+    .card{
+      background: rgba(255,255,255,0.78);
+      border: 1px solid rgba(229,231,235,0.9);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      backdrop-filter: blur(12px);
+    }
+    .card h2{ margin:0 0 10px 0; font-size: 15px; font-weight: 850; }
+
+    .row{ display:flex; gap:12px; flex-wrap:wrap; }
+    .row > *{ flex:1; min-width: 190px; }
+
+    label{ display:block; font-size: 12px; color: var(--muted); margin: 10px 0 6px; }
+
+    input[type="file"]{
+      width:100%; padding: 12px; border-radius: var(--radius2);
+      border: 1px dashed rgba(17,24,39,0.18);
+      background: rgba(255,255,255,0.8); color: var(--muted); outline:none;
+    }
+    select{
+      width:100%; padding:12px; border-radius: var(--radius2);
+      border: 1px solid rgba(17,24,39,0.12);
+      background: rgba(255,255,255,0.86); color: var(--ink); outline:none;
+    }
+    select[multiple]{ min-height: 170px; }
+
+    .seg{
+      display:flex; border: 1px solid rgba(17,24,39,0.12);
+      border-radius: 999px; overflow:hidden;
+      background: rgba(255,255,255,0.86);
+      box-shadow: 0 10px 30px rgba(17,24,39,0.06);
+    }
+    .seg button{
+      border:0; background: transparent; color: var(--muted);
+      padding: 10px 12px; cursor:pointer; flex:1;
+      font-size: 13px; transition: 140ms ease;
+    }
+    .seg button.active{
+      background: linear-gradient(135deg, rgba(255,77,109,0.18), rgba(56,189,248,0.14));
+      color: var(--ink); font-weight: 750;
+    }
+
+    .switch{
+      display:flex; align-items:center; gap: 10px;
+      padding: 12px; border-radius: var(--radius2);
+      border: 1px solid rgba(17,24,39,0.12);
+      background: rgba(255,255,255,0.86);
+      box-shadow: 0 10px 30px rgba(17,24,39,0.06);
+    }
+    .switch input{ width:18px; height:18px; }
+
+    .actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px; }
+
+    .btn{
+      border: 1px solid rgba(17,24,39,0.12);
+      background: rgba(255,255,255,0.9);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 13px;
+      cursor:pointer;
+      transition: 140ms ease;
+      display:inline-flex; align-items:center; justify-content:center; gap:10px;
+      box-shadow: 0 10px 25px rgba(17,24,39,0.05);
+      user-select:none;
+    }
+    .btn:hover{ transform: translateY(-1px); box-shadow: 0 14px 35px rgba(17,24,39,0.08); }
+    .btn.primary{
+      border-color: rgba(255,77,109,0.35);
+      background: linear-gradient(135deg, rgba(255,77,109,0.22), rgba(56,189,248,0.18));
+      font-weight: 800;
+    }
+
+    .divider{ height:1px; background: rgba(17,24,39,0.10); margin: 14px 0; }
+
+    .view{ margin-top: 16px; display:none; }
+    .view.active{ display:block; }
+
+    .topbar{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+    .score{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; color: var(--muted); font-size: 13px; }
+    .score b{ color: var(--ink); }
+
+    .big{
+      font-size: clamp(26px, 4vw, 42px);
+      font-weight: 900; letter-spacing: 0.2px; line-height: 1.15;
+      margin: 10px 0 6px; word-break: break-word;
+    }
+
+    .warn{
+      padding: 12px 14px; border-radius: var(--radius2);
+      border: 1px solid rgba(255,77,109,0.35);
+      background: rgba(255,77,109,0.10);
+      color: var(--ink); font-size: 13px; margin-top: 10px;
+    }
+
+    /* Flash toggles (global) */
+    .toggles{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .togglePill{
+      display:inline-flex; align-items:center; gap:10px;
+      padding: 10px 12px; border-radius: 999px;
+      border: 1px solid rgba(17,24,39,0.12);
+      background: rgba(255,255,255,0.86);
+      box-shadow: 0 10px 25px rgba(17,24,39,0.05);
+      font-size: 13px; color: var(--ink); user-select:none;
+    }
+    .togglePill input{ width:18px; height:18px; }
+
+    .infoStack{ display:grid; gap: 10px; margin-top: 12px; }
+    .infoBox{
+      border-radius: 16px; padding: 12px 14px;
+      border: 1px solid rgba(17,24,39,0.10);
+      background: rgba(255,255,255,0.86);
+      box-shadow: 0 10px 25px rgba(17,24,39,0.05);
+    }
+    .badge{
+      font-size: 12px; font-weight: 850;
+      padding: 6px 10px; border-radius: 999px;
+      border: 1px solid transparent;
+      display:inline-flex; align-items:center; gap: 8px;
+      letter-spacing: 0.2px; margin-bottom: 8px;
+    }
+    .badge.kana{ background: var(--k-kana-bg); border-color: var(--k-kana-ln); color: var(--k-kana-ink); }
+    .badge.romaji{ background: var(--k-romaji-bg); border-color: var(--k-romaji-ln); color: var(--k-romaji-ink); }
+    .badge.meaning{ background: var(--k-mean-bg); border-color: var(--k-mean-ln); color: var(--k-mean-ink); }
+
+    .txt{ white-space: pre-wrap; font-size: 15px; line-height: 1.45; color: var(--ink); }
+
+    /* Practice */
+    .mc{ display:grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+
+    .opt{
+      border: 1px solid rgba(17,24,39,0.12);
+      background: rgba(255,255,255,0.90);
+      border-radius: var(--radius2);
+      box-shadow: 0 10px 25px rgba(17,24,39,0.05);
+      overflow:hidden;
+    }
+    .optTop{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; padding: 12px 14px;
+    }
+    .optMain{ font-size: 14px; font-weight: 800; color: var(--ink); word-break: break-word; }
+    .optTools{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+
+    .miniBtn{
+      border: 1px solid rgba(17,24,39,0.12);
+      background: rgba(255,255,255,0.95);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      cursor:pointer;
+      transition: 140ms ease;
+      box-shadow: 0 8px 18px rgba(17,24,39,0.05);
+      user-select:none;
+      white-space:nowrap;
+    }
+    .miniBtn:hover{ transform: translateY(-1px); box-shadow: 0 12px 24px rgba(17,24,39,0.08); }
+
+    .tap{ width:100%; text-align:left; border:0; background: transparent; padding:0; cursor:pointer; }
+    .tap:disabled{ cursor: default; }
+
+    .answerArea{ display:none; padding: 0 14px 14px 14px; }
+
+    .hintRow{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px; }
+
+    .hintPill{
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 850;
+      border: 1px solid transparent;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      white-space:nowrap;
+    }
+    .hintPill.kana{ background: var(--k-kana-bg); border-color: var(--k-kana-ln); color: var(--k-kana-ink); }
+    .hintPill.romaji{ background: var(--k-romaji-bg); border-color: var(--k-romaji-ln); color: var(--k-romaji-ink); }
+    .hintPill.meaning{ background: var(--k-mean-bg); border-color: var(--k-mean-ln); color: var(--k-mean-ink); }
+
+    .subText{
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      white-space: pre-wrap;
+    }
+
+    .opt.correct{ border-color: rgba(22,163,74,0.35); background: rgba(22,163,74,0.08); }
+    .opt.wrong{ border-color: rgba(220,38,38,0.35); background: rgba(220,38,38,0.08); }
+    .dim{ opacity: 0.92; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>Japanisch Lernbegleiter</h1>
+          <div class="sub">Karteikarten & Üben</div>
+        </div>
+      </div>
+      <div class="pill"><span id="statusText">Noch keine Datei geladen</span></div>
+    </header>
+
+    <!-- MENU -->
+    <div class="grid" id="menuView">
+      <div class="card">
+        <h2>Excel laden</h2>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" />
+        <div id="fileWarn" class="warn" style="display:none;"></div>
+
+        <div class="divider"></div>
+
+        <div class="row">
+          <div>
+            <label for="lessonSelect">Lektionen</label>
+            <select id="lessonSelect" multiple disabled></select>
+          </div>
+
+          <div>
+            <label>Richtung</label>
+            <div class="seg">
+              <button id="dirJpDe" class="active" type="button">Japanisch → Deutsch</button>
+              <button id="dirDeJp" type="button">Deutsch → Japanisch</button>
+              <button id="dirMix" type="button">Gemischt</button>
+            </div>
+
+            <div style="height:10px;"></div>
+
+            <div class="switch">
+              <input type="checkbox" id="shuffleToggle" checked />
+              <div style="font-weight:850;">Mischen</div>
+            </div>
+
+            <div class="actions">
+              <button class="btn primary" id="startFlashcards" type="button">Karteikarten</button>
+              <button class="btn primary" id="startPractice" type="button">Üben</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Status</h2>
+        <div class="pill" style="justify-content:space-between; width:100%;">
+          <span id="statsText">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLASHCARDS VIEW -->
+    <div class="view" id="flashView">
+      <div class="card">
+        <div class="topbar">
+          <div class="actions">
+            <button class="btn" id="backToMenu1" type="button">← Menü</button>
+          </div>
+          <div class="toggles">
+            <label class="togglePill"><input type="checkbox" id="showKanaGlobal" /> Kana dauerhaft</label>
+            <label class="togglePill"><input type="checkbox" id="showRomajiGlobal" /> Romaji dauerhaft</label>
+            <label class="togglePill"><input type="checkbox" id="showMeaningGlobal" /> Bedeutung dauerhaft</label>
+            <div class="score"><span id="flashCounter">0 / 0</span></div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div id="flashFront" class="big">—</div>
+        <div id="flashInfo" class="infoStack"></div>
+
+        <div class="divider"></div>
+
+        <div class="actions">
+          <button class="btn" id="prevFlash" type="button">← Zurück</button>
+          <button class="btn primary" id="nextFlash" type="button">Nächste →</button>
+          <button class="btn primary" id="toggleMeaningBtn" type="button" style="margin-left:auto;">Bedeutung anzeigen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRACTICE VIEW -->
+    <div class="view" id="practiceView">
+      <div class="card">
+        <div class="topbar">
+          <div class="actions">
+            <button class="btn" id="backToMenu2" type="button">← Menü</button>
+          </div>
+          <div class="score">
+            <span>Richtig: <b id="scoreRight">0</b></span>
+            <span>Falsch: <b id="scoreWrong">0</b></span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div id="questionText" class="big">—</div>
+        <div class="actions" id="questionHelpBar" style="margin-top:8px;"></div>
+        <div id="questionHelpArea"></div>
+
+        <div class="mc" id="choices"></div>
+
+        <div style="height: 12px;"></div>
+
+        <div class="actions">
+          <button class="btn primary" id="nextQuestion" type="button" disabled>Nächste Frage →</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+  let allEntries = [];
+  let filteredEntries = [];
+  let lessonOrder = [];
+  let direction = "jpde";
+  let shuffle = true;
+
+  let flashIndex = 0;
+  let flashMeaningForCurrent = false; // per-card toggle (resets on next/prev)
+
+  let rightCount = 0;
+  let wrongCount = 0;
+  let answered = false;
+  let currentQuestion = null;
+
+  const $ = (id) => document.getElementById(id);
+  const norm = (x) => (x ?? "").toString().trim();
+
+  function setStatus(text){ $("statusText").textContent = text; }
+  function setStats(text){ $("statsText").textContent = text; }
+
+  function showWarn(msg){
+    $("fileWarn").style.display = "block";
+    $("fileWarn").textContent = msg;
+  }
+  function hideWarn(){
+    $("fileWarn").style.display = "none";
+    $("fileWarn").textContent = "";
+  }
+
+  function isSentence(entry){
+    const jp = norm(entry.word), de = norm(entry.meaning), kana = norm(entry.kana);
+    const hasPunct = /[。！？\?!…]/.test(jp) || /[。！？\?!…]/.test(kana);
+    const hasSpace = /\s/.test(jp) || /\s/.test(de);
+    const isLong = jp.length >= 14 || de.length >= 22;
+    const hasComma = /[、,;:]/.test(jp) || /[;:]/.test(de);
+    return hasPunct || hasSpace || isLong || hasComma;
+  }
+
+  function sanitizeEntry(raw){
+    const e = {
+      lesson: norm(raw.lesson),
+      word: norm(raw.word),
+      kana: norm(raw.kana),
+      romaji: norm(raw.romaji),
+      meaning: norm(raw.meaning),
+    };
+    e.type = isSentence(e) ? "satz" : "wort";
+    return e;
+  }
+
+  function uniqueSorted(arr){
+    return Array.from(new Set(arr)).sort((a,b)=>{
+      const ax = a.toLowerCase(), bx = b.toLowerCase();
+      const anum = parseFloat(ax.replace(",", "."));
+      const bnum = parseFloat(bx.replace(",", "."));
+      if (!Number.isNaN(anum) && !Number.isNaN(bnum) && anum !== bnum) return anum - bnum;
+      return ax.localeCompare(bx, "de");
+    });
+  }
+
+  function shuffleArray(arr){
+    for (let i = arr.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function getSelectedLessons(){
+    const sel = Array.from($("lessonSelect").selectedOptions).map(o=>o.value);
+    return sel.length ? sel : lessonOrder.slice();
+  }
+
+  function pickDirectionForItem(){
+    if (direction === "mix") return Math.random() < 0.5 ? "jpde" : "dejp";
+    return direction;
+  }
+
+  function setActiveView(viewId){
+    $("menuView").style.display = viewId === "menu" ? "grid" : "none";
+    $("flashView").classList.toggle("active", viewId === "flash");
+    $("practiceView").classList.toggle("active", viewId === "practice");
+  }
+
+  function applyFilters(){
+    const selectedLessons = new Set(getSelectedLessons());
+    filteredEntries = allEntries.filter(e => selectedLessons.has(e.lesson));
+    if (shuffle) filteredEntries = shuffleArray(filteredEntries.slice());
+    flashIndex = 0;
+    flashMeaningForCurrent = false;
+    $("toggleMeaningBtn").textContent = "Bedeutung anzeigen";
+    rightCount = 0;
+    wrongCount = 0;
+    updateScoreUI();
+  }
+
+  // -------------------------
+  // Excel Loading
+  // -------------------------
+  $("fileInput").addEventListener("change", async (ev)=>{
+    hideWarn();
+    const file = ev.target.files?.[0];
+    if (!file) return;
+
+    try{
+      const data = await file.arrayBuffer();
+      const wb = XLSX.read(data, {type:"array"});
+      const sheet = wb.Sheets["Words"];
+      if (!sheet){ showWarn("Blatt 'Words' nicht gefunden."); return; }
+
+      const rows = XLSX.utils.sheet_to_json(sheet, {defval:""});
+      if (!rows.length){ showWarn("Blatt 'Words' ist leer."); return; }
+
+      const required = ["lesson","word","kana","romaji","meaning"];
+      const lowerKeys = Object.keys(rows[0]).map(k=>k.toLowerCase());
+      const missing = required.filter(r=>!lowerKeys.includes(r));
+      if (missing.length){ showWarn("Fehlende Spalten: " + missing.join(", ")); return; }
+
+      const keyMap = {};
+      Object.keys(rows[0]).forEach(k=> keyMap[k.toLowerCase()] = k);
+
+      allEntries = rows
+        .map(r => ({
+          lesson: r[keyMap.lesson],
+          word: r[keyMap.word],
+          kana: r[keyMap.kana],
+          romaji: r[keyMap.romaji],
+          meaning: r[keyMap.meaning],
+        }))
+        .map(sanitizeEntry)
+        .filter(e => e.lesson && (e.word || e.meaning));
+
+      if (!allEntries.length){ showWarn("Keine gültigen Einträge geladen."); return; }
+
+      lessonOrder = uniqueSorted(allEntries.map(e=>e.lesson));
+      populateLessonSelect(lessonOrder);
+      $("lessonSelect").disabled = false;
+
+      setStatus(`Geladen: ${allEntries.length}`);
+      setStats(`${allEntries.length} Einträge • ${lessonOrder.length} Lektionen`);
+      applyFilters();
+    }catch(err){
+      console.error(err);
+      showWarn("Fehler beim Lesen der Datei.");
+    }
+  });
+
+  function populateLessonSelect(lessons){
+    const sel = $("lessonSelect");
+    sel.innerHTML = "";
+    lessons.forEach(ls=>{
+      const opt = document.createElement("option");
+      opt.value = ls;
+      opt.textContent = ls;
+      opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
+  $("lessonSelect").addEventListener("change", ()=>{ if (allEntries.length) applyFilters(); });
+
+  // -------------------------
+  // Direction + shuffle
+  // -------------------------
+  function setDirection(d){
+    direction = d;
+    $("dirJpDe").classList.toggle("active", d==="jpde");
+    $("dirDeJp").classList.toggle("active", d==="dejp");
+    $("dirMix").classList.toggle("active", d==="mix");
+  }
+  $("dirJpDe").addEventListener("click", ()=> setDirection("jpde"));
+  $("dirDeJp").addEventListener("click", ()=> setDirection("dejp"));
+  $("dirMix").addEventListener("click", ()=> setDirection("mix"));
+
+  $("shuffleToggle").addEventListener("change", (e)=>{
+    shuffle = !!e.target.checked;
+    if (allEntries.length) applyFilters();
+  });
+
+  // -------------------------
+  // Start buttons
+  // -------------------------
+  $("startFlashcards").addEventListener("click", ()=>{
+    if (!allEntries.length){ showWarn("Bitte zuerst eine Excel-Datei laden."); return; }
+    applyFilters();
+    if (!filteredEntries.length){ showWarn("Keine Einträge gefunden."); return; }
+    setActiveView("flash");
+    renderFlashcard();
+  });
+
+  $("startPractice").addEventListener("click", ()=>{
+    if (!allEntries.length){ showWarn("Bitte zuerst eine Excel-Datei laden."); return; }
+    applyFilters();
+    if (filteredEntries.length < 4){ showWarn("Mindestens 4 Einträge nötig."); return; }
+    setActiveView("practice");
+    resetPractice();
+    generateQuestion();
+  });
+
+  $("backToMenu1").addEventListener("click", ()=> setActiveView("menu"));
+  $("backToMenu2").addEventListener("click", ()=> setActiveView("menu"));
+
+  // -------------------------
+  // Flashcards
+  // - global toggles for kana/romaji/meaning
+  // - plus a per-card meaning button that resets on next/prev
+  // -------------------------
+  $("showKanaGlobal").addEventListener("change", ()=> renderFlashcard());
+  $("showRomajiGlobal").addEventListener("change", ()=> renderFlashcard());
+  $("showMeaningGlobal").addEventListener("change", ()=> renderFlashcard());
+
+  $("toggleMeaningBtn").addEventListener("click", ()=>{
+    flashMeaningForCurrent = !flashMeaningForCurrent;
+    $("toggleMeaningBtn").textContent = flashMeaningForCurrent ? "Bedeutung ausblenden" : "Bedeutung anzeigen";
+    renderFlashcard();
+  });
+
+  $("prevFlash").addEventListener("click", ()=>{
+    if (!filteredEntries.length) return;
+    flashIndex = (flashIndex - 1 + filteredEntries.length) % filteredEntries.length;
+    flashMeaningForCurrent = false;
+    $("toggleMeaningBtn").textContent = "Bedeutung anzeigen";
+    renderFlashcard();
+  });
+  $("nextFlash").addEventListener("click", ()=>{
+    if (!filteredEntries.length) return;
+    flashIndex = (flashIndex + 1) % filteredEntries.length;
+    flashMeaningForCurrent = false;
+    $("toggleMeaningBtn").textContent = "Bedeutung anzeigen";
+    renderFlashcard();
+  });
+
+  function infoBox(kind, label, text){
+    const box = document.createElement("div");
+    box.className = "infoBox";
+    const badge = document.createElement("div");
+    badge.className = "badge " + kind;
+    badge.textContent = label;
+    const body = document.createElement("div");
+    body.className = "txt";
+    body.textContent = text;
+    box.appendChild(badge);
+    box.appendChild(body);
+    return box;
+  }
+
+  function renderFlashcard(){
+    const total = filteredEntries.length;
+    const e = filteredEntries[flashIndex];
+    $("flashCounter").textContent = `${flashIndex + 1} / ${total}`;
+
+    const d = pickDirectionForItem();
+    const info = $("flashInfo");
+    info.innerHTML = "";
+
+    if (d === "jpde"){
+      $("flashFront").textContent = e.word || "—";
+
+      if ($("showKanaGlobal").checked && norm(e.kana)) info.appendChild(infoBox("kana", "Kana", e.kana));
+      if ($("showRomajiGlobal").checked && norm(e.romaji)) info.appendChild(infoBox("romaji", "Romaji", e.romaji));
+
+      // Meaning: show if global OR per-card toggle
+      const showMeaning = $("showMeaningGlobal").checked || flashMeaningForCurrent;
+      if (showMeaning && norm(e.meaning)) info.appendChild(infoBox("meaning", "Bedeutung", e.meaning));
+    } else {
+      // DE -> JP
+      $("flashFront").textContent = e.meaning || "—";
+
+      // "Meaning" in this direction is actually the answer block
+      const showAnswer = $("showMeaningGlobal").checked || flashMeaningForCurrent;
+      if (showAnswer){
+        if (norm(e.word)) info.appendChild(infoBox("meaning", "Japanisch", e.word));
+        if ($("showKanaGlobal").checked && norm(e.kana)) info.appendChild(infoBox("kana", "Kana", e.kana));
+        if ($("showRomajiGlobal").checked && norm(e.romaji)) info.appendChild(infoBox("romaji", "Romaji", e.romaji));
+      }
+    }
+  }
+
+  // -------------------------
+  // Practice
+  // - JP -> DE: kana/romaji buttons ONLY for the question
+  // - DE -> JP: kana/romaji buttons per option (before answer)
+  // - After answering: DO NOT auto-show details.
+  //   Instead, for each option show buttons (Bedeutung / Kana / Romaji / Japanisch)
+  //   that reveal info only when clicked (so you can learn distractors optionally).
+  // -------------------------
+  function resetPractice(){
+    rightCount = 0; wrongCount = 0; updateScoreUI();
+  }
+  function updateScoreUI(){
+    $("scoreRight").textContent = rightCount;
+    $("scoreWrong").textContent = wrongCount;
+  }
+
+  $("nextQuestion").addEventListener("click", ()=>{
+    if (!filteredEntries.length) return;
+    generateQuestion();
+  });
+
+  function generateQuestion(){
+    answered = false;
+    $("nextQuestion").disabled = true;
+    $("choices").innerHTML = "";
+    $("questionHelpBar").innerHTML = "";
+    $("questionHelpArea").innerHTML = "";
+
+    const base = filteredEntries[Math.floor(Math.random() * filteredEntries.length)];
+    const d = pickDirectionForItem();
+
+    const prompt = d==="jpde" ? (base.word || "—") : (base.meaning || "—");
+    const correct = d==="jpde" ? (base.meaning || "—") : (base.word || "—");
+    $("questionText").textContent = prompt;
+
+    // Question help only for JP->DE
+    if (d === "jpde"){
+      if (norm(base.kana)) $("questionHelpBar").appendChild(makeQuestionToggle("Kana", "kana", base.kana));
+      if (norm(base.romaji)) $("questionHelpBar").appendChild(makeQuestionToggle("Romaji", "romaji", base.romaji));
+    }
+
+    // pool: prefer same type
+    let pool = filteredEntries.filter(e => e.type === base.type);
+    if (pool.length < 4) pool = filteredEntries.slice();
+
+    const answerField = (d==="jpde") ? "meaning" : "word";
+    const used = new Set([norm(correct)]);
+    const distractors = [];
+    const poolShuf = shuffleArray(pool.slice());
+
+    for (const e of poolShuf){
+      const ans = norm(e[answerField]);
+      if (!ans) continue;
+      if (used.has(ans)) continue;
+      used.add(ans);
+      distractors.push(ans);
+      if (distractors.length >= 3) break;
+    }
+    if (distractors.length < 3){
+      const pool2 = shuffleArray(filteredEntries.slice());
+      for (const e of pool2){
+        const ans = norm(e[answerField]);
+        if (!ans) continue;
+        if (used.has(ans)) continue;
+        used.add(ans);
+        distractors.push(ans);
+        if (distractors.length >= 3) break;
+      }
+    }
+
+    const optionsText = shuffleArray([correct, ...distractors].slice(0,4));
+
+    const optionEntries = optionsText.map(t=>{
+      return filteredEntries.find(e => norm(e[answerField]) === norm(t)) || null;
+    });
+
+    currentQuestion = { base, d, correctText: correct, optionsText, answerField, optionEntries };
+    renderOptionCards(currentQuestion);
+  }
+
+  function makeQuestionToggle(label, kind, value){
+    const btn = document.createElement("button");
+    btn.className = "miniBtn";
+    btn.type = "button";
+    btn.textContent = label;
+
+    btn.addEventListener("click", ()=>{
+      const existing = $("questionHelpArea").querySelector(`[data-kind="${kind}"]`);
+      if (existing){ existing.remove(); return; }
+
+      const box = document.createElement("div");
+      box.className = "infoBox";
+      box.dataset.kind = kind;
+
+      const badge = document.createElement("div");
+      badge.className = "badge " + kind;
+      badge.textContent = label;
+
+      const txt = document.createElement("div");
+      txt.className = "txt";
+      txt.textContent = value;
+
+      box.appendChild(badge);
+      box.appendChild(txt);
+      $("questionHelpArea").appendChild(box);
+    });
+
+    return btn;
+  }
+
+  function renderOptionCards(q){
+    const container = $("choices");
+    container.innerHTML = "";
+
+    q.optionsText.forEach((optText, idx)=>{
+      const entry = q.optionEntries[idx];
+
+      const card = document.createElement("div");
+      card.className = "opt";
+
+      const top = document.createElement("div");
+      top.className = "optTop";
+
+      const tap = document.createElement("button");
+      tap.className = "tap";
+      tap.type = "button";
+
+      const main = document.createElement("div");
+      main.className = "optMain";
+      main.textContent = optText;
+
+      tap.appendChild(main);
+
+      tap.addEventListener("click", ()=>{
+        if (answered) return;
+        answered = true;
+
+        const isCorrect = norm(optText) === norm(q.correctText);
+
+        Array.from(container.children).forEach((optCard, j)=>{
+          optCard.classList.add("dim");
+          const thisText = q.optionsText[j];
+          const thisIsCorrect = norm(thisText) === norm(q.correctText);
+
+          if (thisIsCorrect) optCard.classList.add("correct");
+          if (!isCorrect && norm(thisText) === norm(optText)) optCard.classList.add("wrong");
+
+          // disable only the tap buttons (so post-answer reveal buttons work)
+          optCard.querySelectorAll(".tap").forEach(b=> b.disabled = true);
+
+          // after answering: show reveal buttons (not auto reveal)
+          enablePostAnswerTools(optCard, q.optionEntries[j]);
+        });
+
+        if (isCorrect) rightCount++; else wrongCount++;
+        updateScoreUI();
+        $("nextQuestion").disabled = false;
+      });
+
+      const tools = document.createElement("div");
+      tools.className = "optTools";
+
+      // Before answer: DE->JP only, per option kana/romaji buttons
+      if (q.d === "dejp"){
+        if (norm(entry?.kana)) tools.appendChild(makeMiniHint("Kana", "kana", () => entry?.kana));
+        if (norm(entry?.romaji)) tools.appendChild(makeMiniHint("Romaji", "romaji", () => entry?.romaji));
+      }
+
+      top.appendChild(tap);
+      top.appendChild(tools);
+
+      const answerArea = document.createElement("div");
+      answerArea.className = "answerArea";
+
+      card.appendChild(top);
+      card.appendChild(answerArea);
+
+      container.appendChild(card);
+    });
+  }
+
+  function makeMiniHint(label, kind, getValue){
+    const btn = document.createElement("button");
+    btn.className = "miniBtn";
+    btn.type = "button";
+    btn.textContent = label;
+
+    btn.addEventListener("click", (ev)=>{
+      ev.stopPropagation();
+      const optCard = btn.closest(".opt");
+      const area = optCard.querySelector(".answerArea");
+      const existing = area.querySelector(`[data-hint="${kind}"]`);
+      if (existing){
+        existing.remove();
+        if (!area.children.length) area.style.display = "none";
+        return;
+      }
+      const value = norm(getValue?.());
+      if (!value) return;
+      area.style.display = "block";
+      area.appendChild(makeHintChip(kind, label, value));
+    });
+
+    return btn;
+  }
+
+  function makeHintChip(kind, label, value){
+    const wrap = document.createElement("div");
+    wrap.className = "hintRow";
+    wrap.dataset.hint = kind;
+
+    const pill = document.createElement("div");
+    pill.className = "hintPill " + (kind==="kana" ? "kana" : kind==="romaji" ? "romaji" : "meaning");
+    pill.textContent = label;
+
+    const txt = document.createElement("div");
+    txt.className = "subText";
+    txt.textContent = value;
+
+    const box = document.createElement("div");
+    box.style.display = "grid";
+    box.style.gap = "6px";
+    box.appendChild(pill);
+    box.appendChild(txt);
+
+    wrap.appendChild(box);
+    return wrap;
+  }
+
+  function enablePostAnswerTools(optCard, entry){
+    const tools = optCard.querySelector(".optTools");
+    const area = optCard.querySelector(".answerArea");
+
+    // If already added, don't add twice
+    if (tools.dataset.post === "1") return;
+    tools.dataset.post = "1";
+
+    // Add "Bedeutung" button ONLY after answering (for all options)
+    if (norm(entry?.meaning)) tools.appendChild(makeMiniHint("Bedeutung", "meaning", () => entry?.meaning));
+
+    // Also allow optionally to reveal JP/kana/romaji after answering (learning distractors)
+    if (norm(entry?.word)) tools.appendChild(makeMiniHint("Japanisch", "meaning", () => entry?.word));
+    if (norm(entry?.kana)) tools.appendChild(makeMiniHint("Kana", "kana", () => entry?.kana));
+    if (norm(entry?.romaji)) tools.appendChild(makeMiniHint("Romaji", "romaji", () => entry?.romaji));
+
+    // Keep area closed by default
+    if (!area.children.length) area.style.display = "none";
+  }
+
+  // -------------------------
+  // Init
+  // -------------------------
+  setActiveView("menu");
+  setDirection("jpde");
+  setStats("—");
+</script>
+</body>
+</html>
